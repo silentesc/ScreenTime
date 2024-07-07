@@ -5,7 +5,7 @@ use single_instance::SingleInstance;
 use std::sync::Mutex;
 use tauri::{CustomMenuItem, Manager, SystemTray, SystemTrayEvent, SystemTrayMenu};
 
-use utils::{static_manager, storage_utils};
+use utils::storage_utils;
 
 pub mod listeners {
     pub mod focus_change_listener;
@@ -33,6 +33,8 @@ lazy_static::lazy_static! {
     static ref INITIALIZED: Mutex<bool> = Mutex::new(false);
 }
 
+// TODO: IPC to show window when starting and another instance is running
+
 fn save_data() {
     // Save the data to the file
     let data_file_path = storage_utils::get_data_file_path();
@@ -52,8 +54,6 @@ fn init_backend() {
 
     println!("Initializing backend...");
 
-    static_manager::init();
-
     let data_file_path = storage_utils::get_data_file_path();
 
     // Read the data from the file
@@ -65,6 +65,15 @@ fn init_backend() {
     // Start the listeners
     listeners::focus_change_listener::start_focus_change_listener(500);
     listeners::process_listener::start_process_listener(1000);
+
+    // Save the data every 5 minutes
+    std::thread::spawn(move || {
+        
+        loop {
+            save_data();
+            std::thread::sleep(std::time::Duration::from_secs(60 * 5));
+        }
+    });
 
     println!("Backend initialized");
 }

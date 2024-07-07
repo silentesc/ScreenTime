@@ -1,20 +1,22 @@
 use std::collections::HashMap;
+use std::sync::Mutex;
 
 use crate::classes::screen_time_app::ScreenTimeApp;
+use std::thread;
+use std::time::Duration;
 
-static mut SCREEN_TIME_APPS: Option<HashMap<String, ScreenTimeApp>> = None;
-
-pub fn init() {
-    unsafe {
-        if SCREEN_TIME_APPS.is_none() {
-            SCREEN_TIME_APPS = Some(HashMap::new());
-        }
-    }
-}
+lazy_static::lazy_static!(
+    static ref SCREEN_TIME_APPS: Mutex<HashMap<String, ScreenTimeApp>> = Mutex::new(HashMap::new());
+);
 
 pub fn get_screen_time_apps() -> HashMap<String, ScreenTimeApp> {
-    unsafe {
-        SCREEN_TIME_APPS.as_ref().unwrap().clone()
+    match SCREEN_TIME_APPS.try_lock() {
+        Ok(screen_time_apps) => screen_time_apps.clone(),
+        Err(_) => {
+            println!("Failed to get screen time apps, trying again in 10ms...");
+            thread::sleep(Duration::from_millis(10));
+            get_screen_time_apps()
+        }
     }
 }
 
@@ -23,20 +25,35 @@ pub fn get_screen_time_app(path: &str) -> Option<ScreenTimeApp> {
 }
 
 pub fn insert_screen_time_app(app: ScreenTimeApp) -> HashMap<String, ScreenTimeApp> {
-    unsafe {
-        SCREEN_TIME_APPS.as_mut().unwrap().insert(app.get_path().to_string(), app);
+    match SCREEN_TIME_APPS.try_lock() {
+        Ok(mut screen_time_apps) => {
+            screen_time_apps.insert(app.get_path().to_string(), app);
+            drop(screen_time_apps);
+            get_screen_time_apps()
+        }
+        Err(_) => {
+            println!("Failed to insert into screen time apps, trying again in 10ms...");
+            thread::sleep(Duration::from_millis(10));
+            insert_screen_time_app(app)
+        }
     }
-    get_screen_time_apps()
 }
 
 pub fn remove_screen_time_app(path: &str, only_first: bool) -> HashMap<String, ScreenTimeApp> {
-    unsafe {
-        let screen_time_apps = SCREEN_TIME_APPS.as_mut().unwrap();
-        if only_first {
-            screen_time_apps.remove_entry(path);
-        } else {
-            screen_time_apps.remove(path);
+    match SCREEN_TIME_APPS.try_lock() {
+        Ok(mut screen_time_apps) => {
+            if only_first {
+                screen_time_apps.remove_entry(path);
+            } else {
+                screen_time_apps.remove(path);
+            }
+            drop(screen_time_apps);
+            get_screen_time_apps()
+        }
+        Err(_) => {
+            println!("Failed to remove from screen time apps, trying again in 10ms...");
+            thread::sleep(Duration::from_millis(10));
+            remove_screen_time_app(path, only_first)
         }
     }
-    get_screen_time_apps()
 }
