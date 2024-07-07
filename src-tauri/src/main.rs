@@ -1,10 +1,11 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
+use single_instance::SingleInstance;
 use std::sync::Mutex;
+use tauri::{CustomMenuItem, Manager, SystemTray, SystemTrayEvent, SystemTrayMenu};
 
-use tauri::{Manager, WindowEvent};
-use utils::storage_utils;
+use utils::{static_manager, storage_utils};
 
 pub mod listeners {
     pub mod focus_change_listener;
@@ -32,7 +33,6 @@ lazy_static::lazy_static! {
     static ref INITIALIZED: Mutex<bool> = Mutex::new(false);
 }
 
-#[tauri::command]
 fn save_data() {
     // Save the data to the file
     let data_file_path = storage_utils::get_data_file_path();
@@ -52,6 +52,8 @@ fn init_backend() {
 
     println!("Initializing backend...");
 
+    static_manager::init();
+
     let data_file_path = storage_utils::get_data_file_path();
 
     // Read the data from the file
@@ -68,23 +70,54 @@ fn init_backend() {
 }
 
 fn main() {
-    tauri::Builder::default()
-        .setup(move |app| {
-            let window = app.get_window("main").unwrap();
+    // Single instance setup
+    let instance = SingleInstance::new("screen-time").unwrap();
 
-            // Window events, like the `CloseRequested` event, can be handled here.
-            window.on_window_event(|event| {
-                if let WindowEvent::CloseRequested { .. } = event {
-                    save_data();
-                }
-            });
+    if instance.is_single() {
+        let tray_menu = SystemTrayMenu::new()
+            .add_item(CustomMenuItem::new("show".to_string(), "Show"))
+            .add_item(CustomMenuItem::new("quit".to_string(), "Quit"));
+        let system_tray = SystemTray::new().with_menu(tray_menu);
 
-            // Setting up the backend
-            init_backend();
+        tauri::Builder::default()
+            .setup(move |app| {
+                let window = app.get_window("main").unwrap();
 
-            Ok(())
-        })
-        .invoke_handler(tauri::generate_handler![save_data])
-        .run(tauri::generate_context!())
-        .expect("error while running tauri application");
+                // Hide the window instead of closing
+                let window_clone = window.clone();
+                window.on_window_event(move |event| {
+                    if let tauri::WindowEvent::CloseRequested { api, .. } = event {
+                        api.prevent_close();
+                        window_clone.hide().unwrap();
+                    }
+                });
+
+                // Initialize the backend
+                init_backend();
+
+                Ok(())
+            })
+            .system_tray(system_tray)
+            .on_system_tray_event(|app, event| match event {
+                SystemTrayEvent::MenuItemClick { id, .. } => match id.as_str() {
+                    "show" => {
+                        let window = app.get_window("main").unwrap();
+                        window.show().unwrap();
+                        window.set_focus().unwrap();
+                    }
+                    "quit" => {
+                        save_data();
+                        let window = app.get_window("main").unwrap();
+                        window.close().unwrap();
+                    }
+                    _ => {}
+                },
+                _ => {}
+            })
+            .run(tauri::generate_context!())
+            .expect("error while running tauri application");
+    } else {
+        // Exit the current instance
+        std::process::exit(0);
+    }
 }
