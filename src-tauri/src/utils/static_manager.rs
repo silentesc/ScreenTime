@@ -1,12 +1,12 @@
 use std::collections::HashMap;
-use std::sync::Mutex;
+use std::sync::{Arc, Mutex};
 
 use crate::classes::screen_time_app::ScreenTimeApp;
 use std::thread;
 use std::time::Duration;
 
 lazy_static::lazy_static!(
-    static ref SCREEN_TIME_APPS: Mutex<HashMap<String, ScreenTimeApp>> = Mutex::new(HashMap::new());
+    static ref SCREEN_TIME_APPS: Arc<Mutex<HashMap<String, ScreenTimeApp>>> = Arc::new(Mutex::new(HashMap::new()));
 );
 
 pub fn get_screen_time_apps() -> HashMap<String, ScreenTimeApp> {

@@ -2,7 +2,11 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 use single_instance::SingleInstance;
-use std::sync::Mutex;
+use std::{
+    io::{Read, Write},
+    net::{TcpListener, TcpStream},
+    sync::{Arc, Mutex},
+};
 use tauri::{CustomMenuItem, Manager, SystemTray, SystemTrayEvent, SystemTrayMenu};
 
 use utils::storage_utils;
@@ -32,8 +36,6 @@ pub mod utils {
 lazy_static::lazy_static! {
     static ref INITIALIZED: Mutex<bool> = Mutex::new(false);
 }
-
-// TODO: IPC to show window when starting and another instance is running
 
 fn save_data() {
     // Save the data to the file
@@ -67,15 +69,24 @@ fn init_backend() {
     listeners::process_listener::start_process_listener(1000);
 
     // Save the data every 5 minutes
-    std::thread::spawn(move || {
-        
-        loop {
-            save_data();
-            std::thread::sleep(std::time::Duration::from_secs(60 * 5));
-        }
+    std::thread::spawn(move || loop {
+        save_data();
+        std::thread::sleep(std::time::Duration::from_secs(60 * 5));
     });
 
     println!("Backend initialized");
+}
+
+fn hide_window(window: &tauri::Window) {
+    window.minimize().unwrap();
+    std::thread::sleep(std::time::Duration::from_millis(150));
+    window.hide().unwrap();
+}
+
+fn show_window(window: &tauri::Window) {
+    window.show().unwrap();
+    window.unminimize().unwrap();
+    window.set_focus().unwrap();
 }
 
 fn main() {
@@ -97,7 +108,44 @@ fn main() {
                 window.on_window_event(move |event| {
                     if let tauri::WindowEvent::CloseRequested { api, .. } = event {
                         api.prevent_close();
-                        window_clone.hide().unwrap();
+                        hide_window(&window_clone);
+                    }
+                });
+
+                // Listen for other instances
+                let window_mutex = Arc::new(Mutex::new(window));
+                let tcp_listener =
+                    TcpListener::bind("127.0.0.1:50505").expect("Failed to bind listener");
+                std::thread::spawn(move || {
+                    for stream in tcp_listener.incoming() {
+                        match stream {
+                            Ok(mut stream) => {
+                                let mut buffer = [0; 128];
+                                match stream.read(&mut buffer) {
+                                    Ok(0) => {
+                                        println!("Received empty message, ignoring.");
+                                        continue;
+                                    }
+                                    Ok(bytes_read) => {
+                                        let message =
+                                            String::from_utf8_lossy(&buffer[..bytes_read])
+                                                .trim()
+                                                .to_string();
+                                        if message == "show".to_string() {
+                                            let window = window_mutex.lock().unwrap();
+                                            show_window(&window);
+                                        }
+                                    }
+                                    Err(_) => {
+                                        println!("Failed to read message, ignoring.");
+                                        continue;
+                                    }
+                                }
+                            }
+                            Err(e) => {
+                                println!("Error: {}", e);
+                            }
+                        }
                     }
                 });
 
@@ -111,8 +159,7 @@ fn main() {
                 SystemTrayEvent::MenuItemClick { id, .. } => match id.as_str() {
                     "show" => {
                         let window = app.get_window("main").unwrap();
-                        window.show().unwrap();
-                        window.set_focus().unwrap();
+                        show_window(&window);
                     }
                     "quit" => {
                         save_data();
@@ -126,6 +173,15 @@ fn main() {
             .run(tauri::generate_context!())
             .expect("error while running tauri application");
     } else {
+        // Send a message to the other instance to show the window
+        let mut stream =
+            TcpStream::connect("127.0.0.1:50505").expect("Failed to connect to listener");
+        stream.write("show".as_bytes()).unwrap();
+        stream.flush().unwrap();
+        stream.shutdown(std::net::Shutdown::Both).unwrap();
+
+        println!("Another instance is already running, sending message to show window.");
+
         // Exit the current instance
         std::process::exit(0);
     }
