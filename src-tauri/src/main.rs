@@ -3,6 +3,7 @@
 
 use std::sync::Mutex;
 
+use tauri::{Manager, WindowEvent};
 use utils::storage_utils;
 
 pub mod listeners {
@@ -32,6 +33,14 @@ lazy_static::lazy_static! {
 }
 
 #[tauri::command]
+fn save_data() {
+    // Save the data to the file
+    let data_file_path = storage_utils::get_data_file_path();
+    println!("Saving data to file: {}", data_file_path.as_str());
+    storage_utils::save_screen_time_apps_to_file(data_file_path.as_str());
+    println!("Data saved to file: {}", data_file_path.as_str());
+}
+
 fn init_backend() {
     // Check if the backend is already initialized
     let mut initialized = INITIALIZED.lock().unwrap();
@@ -58,18 +67,24 @@ fn init_backend() {
     println!("Backend initialized");
 }
 
-#[tauri::command]
-fn save_data() {
-    // Save the data to the file
-    let data_file_path = storage_utils::get_data_file_path();
-    println!("Saving data to file: {}", data_file_path.as_str());
-    storage_utils::save_screen_time_apps_to_file(data_file_path.as_str());
-    println!("Data saved to file: {}", data_file_path.as_str());
-}
-
 fn main() {
     tauri::Builder::default()
-        .invoke_handler(tauri::generate_handler![init_backend, save_data])
+        .setup(move |app| {
+            let window = app.get_window("main").unwrap();
+
+            // Window events, like the `CloseRequested` event, can be handled here.
+            window.on_window_event(|event| {
+                if let WindowEvent::CloseRequested { .. } = event {
+                    save_data();
+                }
+            });
+
+            // Setting up the backend
+            init_backend();
+
+            Ok(())
+        })
+        .invoke_handler(tauri::generate_handler![save_data])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

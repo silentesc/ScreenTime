@@ -2,8 +2,6 @@ import { invoke } from "@tauri-apps/api/tauri";
 import "./App.css";
 
 function App() {
-  invoke("init_backend");
-
   const saveData = () => {
     invoke("save_data");
   };
