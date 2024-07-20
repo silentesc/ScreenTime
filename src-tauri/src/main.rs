@@ -39,30 +39,46 @@ lazy_static::lazy_static! {
 }
 
 #[tauri::command]
-fn get_screen_time_apps(
+fn get_today_date() -> String {
+    utils::date_utils::get_today_date()
+}
+
+#[tauri::command]
+fn get_specific_date(day: u32, month: u32, year: i32) -> String {
+    utils::date_utils::get_specific_date(day, month, year)
+}
+
+#[tauri::command]
+fn get_screen_time_apps_sorted(
     date: &str,
     sort_mode: &str,
     reversed: bool,
 ) -> Vec<screen_time_app::ScreenTimeApp> {
-    let screen_time_apps = static_manager::get_screen_time_apps();
-    let mut values: Vec<&screen_time_app::ScreenTimeApp> = screen_time_apps.values().collect();
+    let mut screen_time_apps: Vec<screen_time_app::ScreenTimeApp> =
+        static_manager::get_screen_time_apps()
+            .into_values()
+            .collect();
 
     match sort_mode {
         "millis_in_foreground" => {
-            values.sort_by_key(|screen_time_app| screen_time_app.get_millis_in_foreground(date));
-            values.retain(|screen_time_app| screen_time_app.get_millis_in_foreground(date) > 0);
+            screen_time_apps
+                .sort_by_key(|screen_time_app| screen_time_app.get_millis_in_foreground(date));
+            screen_time_apps
+                .retain(|screen_time_app| screen_time_app.get_millis_in_foreground(date) > 0);
         }
         "millis_in_background" => {
-            values.sort_by_key(|screen_time_app| screen_time_app.get_millis_in_background(date));
-            values.retain(|screen_time_app| screen_time_app.get_millis_in_background(date) > 0);
+            screen_time_apps
+                .sort_by_key(|screen_time_app| screen_time_app.get_millis_in_background(date));
+            screen_time_apps
+                .retain(|screen_time_app| screen_time_app.get_millis_in_background(date) > 0);
         }
         "times_opened" => {
-            values.sort_by_key(|screen_time_app| screen_time_app.get_times_opened(date));
-            values.retain(|screen_time_app| screen_time_app.get_times_opened(date) > 0);
+            screen_time_apps.sort_by_key(|screen_time_app| screen_time_app.get_times_opened(date));
+            screen_time_apps.retain(|screen_time_app| screen_time_app.get_times_opened(date) > 0);
         }
         "times_focused" => {
-            values.sort_by_key(|screen_time_app| screen_time_app.get_times_focused(date));
-            values.retain(|screen_time_app| screen_time_app.get_times_focused(date) > 0);
+            screen_time_apps.sort_by_key(|screen_time_app| screen_time_app.get_times_focused(date));
+            screen_time_apps.retain(|screen_time_app| screen_time_app.get_times_focused(date) > 0);
         }
         _ => {
             return Vec::new();
@@ -70,13 +86,10 @@ fn get_screen_time_apps(
     }
 
     if reversed {
-        values.reverse();
+        screen_time_apps.reverse();
     }
-    let mut returning_values: Vec<screen_time_app::ScreenTimeApp> = Vec::new();
-    for value in values {
-        returning_values.push(value.clone());
-    }
-    returning_values
+
+    return screen_time_apps;
 }
 
 fn save_data() {
@@ -226,7 +239,11 @@ fn main() {
                 },
                 _ => {}
             })
-            .invoke_handler(tauri::generate_handler![get_screen_time_apps])
+            .invoke_handler(tauri::generate_handler![
+                get_screen_time_apps_sorted,
+                get_today_date,
+                get_specific_date
+            ])
             .run(tauri::generate_context!())
             .expect("error while running tauri application");
     } else {

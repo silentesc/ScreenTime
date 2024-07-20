@@ -8,13 +8,55 @@ function App() {
       <h1>ScreeTime</h1>
       <button
         onClick={async () => {
-          const response = await invoke("get_screen_time_apps", { date: "20.07.2024", sortMode: "millis_in_foreground", reversed: true });
-          for (const app of response) {
-            console.log(app.display_name, app.millis_in_foreground["20.07.2024"]);
+          const date = await invoke("get_today_date");
+
+          const sorted_apps = await invoke("get_screen_time_apps_sorted", { date: date, sortMode: "millis_in_foreground", reversed: true });
+          console.log("millis_in_foreground millis_in_foreground millis_in_foreground");
+          for (const app of sorted_apps) {
+            console.log(app.display_name, app.millis_in_foreground[date]);
           }
         }}>
-        Get Screen Time
-      </button>
+        Get Screen Time Foreground
+      </button> <br /> <br />
+
+      <button
+        onClick={async () => {
+          const date = await invoke("get_today_date");
+
+          const sorted_apps = await invoke("get_screen_time_apps_sorted", { date: date, sortMode: "millis_in_background", reversed: true });
+          console.log("millis_in_background millis_in_background millis_in_background");
+          for (const app of sorted_apps) {
+            console.log(app.display_name, app.millis_in_background[date]);
+          }
+        }}>
+        Get Screen Time Background
+      </button> <br /> <br />
+
+      <button
+        onClick={async () => {
+          const date = await invoke("get_today_date");
+
+          const sorted_apps = await invoke("get_screen_time_apps_sorted", { date: date, sortMode: "times_opened", reversed: true });
+          console.log("times_opened times_opened times_opened");
+          for (const app of sorted_apps) {
+            console.log(app.display_name, app.times_opened[date]);
+          }
+        }}>
+        Get Screen Time Times Opened
+      </button> <br /> <br />
+
+      <button
+        onClick={async () => {
+          const date = await invoke("get_today_date");
+
+          const sorted_apps = await invoke("get_screen_time_apps_sorted", { date: date, sortMode: "times_focused", reversed: true });
+          console.log("times_focued times_focued times_focued");
+          for (const app of sorted_apps) {
+            console.log(app.display_name, app.times_focused[date]);
+          }
+        }}>
+        Get Screen Time Times Focused
+      </button> <br /> <br />
     </div>
   );
 }
