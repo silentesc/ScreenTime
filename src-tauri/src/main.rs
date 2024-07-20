@@ -1,6 +1,7 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
+use classes::screen_time_app;
 use single_instance::SingleInstance;
 use std::{
     io::{Read, Write},
@@ -9,7 +10,7 @@ use std::{
 };
 use tauri::{CustomMenuItem, Manager, SystemTray, SystemTrayEvent, SystemTrayMenu};
 
-use utils::storage_utils;
+use utils::{static_manager, storage_utils};
 
 pub mod listeners {
     pub mod focus_change_listener;
@@ -37,6 +38,47 @@ lazy_static::lazy_static! {
     static ref INITIALIZED: Mutex<bool> = Mutex::new(false);
 }
 
+#[tauri::command]
+fn get_screen_time_apps(
+    date: &str,
+    sort_mode: &str,
+    reversed: bool,
+) -> Vec<screen_time_app::ScreenTimeApp> {
+    let screen_time_apps = static_manager::get_screen_time_apps();
+    let mut values: Vec<&screen_time_app::ScreenTimeApp> = screen_time_apps.values().collect();
+
+    match sort_mode {
+        "millis_in_foreground" => {
+            values.sort_by_key(|screen_time_app| screen_time_app.get_millis_in_foreground(date));
+            values.retain(|screen_time_app| screen_time_app.get_millis_in_foreground(date) > 0);
+        }
+        "millis_in_background" => {
+            values.sort_by_key(|screen_time_app| screen_time_app.get_millis_in_background(date));
+            values.retain(|screen_time_app| screen_time_app.get_millis_in_background(date) > 0);
+        }
+        "times_opened" => {
+            values.sort_by_key(|screen_time_app| screen_time_app.get_times_opened(date));
+            values.retain(|screen_time_app| screen_time_app.get_times_opened(date) > 0);
+        }
+        "times_focused" => {
+            values.sort_by_key(|screen_time_app| screen_time_app.get_times_focused(date));
+            values.retain(|screen_time_app| screen_time_app.get_times_focused(date) > 0);
+        }
+        _ => {
+            return Vec::new();
+        }
+    }
+
+    if reversed {
+        values.reverse();
+    }
+    let mut returning_values: Vec<screen_time_app::ScreenTimeApp> = Vec::new();
+    for value in values {
+        returning_values.push(value.clone());
+    }
+    returning_values
+}
+
 fn save_data() {
     // Save the data to the file
     let data_file_path = storage_utils::get_data_file_path();
@@ -56,13 +98,9 @@ fn init_backend() {
 
     println!("Initializing backend...");
 
-    let data_file_path = storage_utils::get_data_file_path();
-
     // Read the data from the file
+    let data_file_path = storage_utils::get_data_file_path();
     storage_utils::set_data_from_file(data_file_path.as_str());
-
-    // Save the data to the file
-    storage_utils::save_screen_time_apps_to_file(data_file_path.as_str());
 
     // Start the listeners
     listeners::focus_change_listener::start_focus_change_listener(500);
@@ -85,6 +123,7 @@ fn hide_window(window: &tauri::Window) {
 
 fn show_window(window: &tauri::Window) {
     window.show().unwrap();
+    std::thread::sleep(std::time::Duration::from_millis(150));
     window.unminimize().unwrap();
     window.set_focus().unwrap();
 }
@@ -135,15 +174,31 @@ fn main() {
                                             let window = window_mutex.lock().unwrap();
                                             show_window(&window);
                                         }
+
+                                        stream.shutdown(std::net::Shutdown::Both).unwrap();
                                     }
-                                    Err(_) => {
-                                        println!("Failed to read message, ignoring.");
-                                        continue;
+                                    Err(e) => {
+                                        if e.kind() == std::io::ErrorKind::Interrupted {
+                                            println!("Operation interrupted, shutting down.");
+                                            break;
+                                        } else {
+                                            println!(
+                                                "Failed to read message, ignoring. Error: {}",
+                                                e
+                                            );
+                                            continue;
+                                        }
                                     }
                                 }
                             }
                             Err(e) => {
-                                println!("Error: {}", e);
+                                if e.kind() == std::io::ErrorKind::Interrupted {
+                                    println!("Accept operation interrupted, shutting down.");
+                                    break;
+                                } else {
+                                    println!("Failed to accept connection, ignoring. Error: {}", e);
+                                    continue;
+                                }
                             }
                         }
                     }
@@ -165,11 +220,13 @@ fn main() {
                         save_data();
                         let window = app.get_window("main").unwrap();
                         window.close().unwrap();
+                        app.exit(0);
                     }
                     _ => {}
                 },
                 _ => {}
             })
+            .invoke_handler(tauri::generate_handler![get_screen_time_apps])
             .run(tauri::generate_context!())
             .expect("error while running tauri application");
     } else {
