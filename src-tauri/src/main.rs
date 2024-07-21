@@ -10,7 +10,7 @@ use std::{
 };
 use tauri::{CustomMenuItem, Manager, SystemTray, SystemTrayEvent, SystemTrayMenu};
 
-use utils::{static_manager, storage_utils};
+use utils::storage_utils;
 
 pub mod listeners {
     pub mod focus_change_listener;
@@ -34,9 +34,20 @@ pub mod utils {
     pub mod storage_utils;
 }
 
+pub mod commands {
+    pub mod get_screen_time_app_by_name;
+    pub mod get_screen_time_apps_sorted;
+}
+
 lazy_static::lazy_static! {
     static ref INITIALIZED: Mutex<bool> = Mutex::new(false);
 }
+
+/**
+ * 
+ * Tauri commands
+ * 
+ */
 
 #[tauri::command]
 fn get_today_date() -> String {
@@ -54,43 +65,19 @@ fn get_screen_time_apps_sorted(
     sort_mode: &str,
     reversed: bool,
 ) -> Vec<screen_time_app::ScreenTimeApp> {
-    let mut screen_time_apps: Vec<screen_time_app::ScreenTimeApp> =
-        static_manager::get_screen_time_apps()
-            .into_values()
-            .collect();
-
-    match sort_mode {
-        "millis_in_foreground" => {
-            screen_time_apps
-                .sort_by_key(|screen_time_app| screen_time_app.get_millis_in_foreground(date));
-            screen_time_apps
-                .retain(|screen_time_app| screen_time_app.get_millis_in_foreground(date) > 0);
-        }
-        "millis_in_background" => {
-            screen_time_apps
-                .sort_by_key(|screen_time_app| screen_time_app.get_millis_in_background(date));
-            screen_time_apps
-                .retain(|screen_time_app| screen_time_app.get_millis_in_background(date) > 0);
-        }
-        "times_opened" => {
-            screen_time_apps.sort_by_key(|screen_time_app| screen_time_app.get_times_opened(date));
-            screen_time_apps.retain(|screen_time_app| screen_time_app.get_times_opened(date) > 0);
-        }
-        "times_focused" => {
-            screen_time_apps.sort_by_key(|screen_time_app| screen_time_app.get_times_focused(date));
-            screen_time_apps.retain(|screen_time_app| screen_time_app.get_times_focused(date) > 0);
-        }
-        _ => {
-            return Vec::new();
-        }
-    }
-
-    if reversed {
-        screen_time_apps.reverse();
-    }
-
-    return screen_time_apps;
+    commands::get_screen_time_apps_sorted::get_screen_time_apps_sorted(date, sort_mode, reversed)
 }
+
+#[tauri::command]
+fn get_screen_time_app_by_name(app_name: &str, ignore_case: bool) -> Option<screen_time_app::ScreenTimeApp> {
+    commands::get_screen_time_app_by_name::get_screen_time_app_by_name(app_name, ignore_case)
+}
+
+/**
+ * 
+ * Backend stuff
+ * 
+ */
 
 fn save_data() {
     // Save the data to the file
@@ -140,6 +127,12 @@ fn show_window(window: &tauri::Window) {
     window.unminimize().unwrap();
     window.set_focus().unwrap();
 }
+
+/**
+ * 
+ * Main function
+ * 
+ */
 
 fn main() {
     // Single instance setup
@@ -242,7 +235,8 @@ fn main() {
             .invoke_handler(tauri::generate_handler![
                 get_screen_time_apps_sorted,
                 get_today_date,
-                get_specific_date
+                get_specific_date,
+                get_screen_time_app_by_name
             ])
             .run(tauri::generate_context!())
             .expect("error while running tauri application");

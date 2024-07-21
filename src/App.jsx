@@ -57,6 +57,17 @@ function App() {
         }}>
         Get Screen Time Times Focused
       </button> <br /> <br />
+
+      <button
+        onClick={async () => {
+          const date = await invoke("get_today_date");
+
+          const app = await invoke("get_screen_time_app_by_name", { appName: "Discord.exe", ignoreCase: true });
+          console.log("get_screen_time_app_by_name get_screen_time_app_by_name get_screen_time_app_by_name");
+          console.log(app);
+        }}>
+        Get Screen Time App By Name (Discord.exe)
+      </button> <br /> <br />
     </div>
   );
 }
