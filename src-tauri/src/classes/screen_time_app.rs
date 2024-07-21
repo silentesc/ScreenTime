@@ -48,16 +48,12 @@ impl ScreenTimeApp {
      * @return void
      */
     pub fn set_apps_from_json_string(json_string: String) {
-        let apps: Vec<ScreenTimeApp> =
-            serde_json::from_str(&json_string).unwrap_or_else(|_| vec![]);
+        let apps: Vec<ScreenTimeApp> = serde_json::from_str(&json_string).unwrap_or_else(|_| vec![]);
 
         let mut screen_time_apps = static_manager::get_screen_time_apps();
         for app in apps {
             if screen_time_apps.contains_key(app.path.as_str()) {
-                screen_time_apps
-                    .get_mut(app.path.as_str())
-                    .unwrap()
-                    .merge(&app);
+                screen_time_apps.get_mut(app.path.as_str()).unwrap().merge(&app);
                 continue;
             }
             static_manager::insert_screen_time_app(app.clone());
@@ -70,28 +66,20 @@ impl ScreenTimeApp {
 
     pub fn merge(&mut self, other: &ScreenTimeApp) {
         for (date, millis) in other.millis_in_foreground.iter() {
-            self.millis_in_foreground.insert(
-                date.clone(),
-                self.millis_in_foreground.get(date).unwrap_or(&0) + millis,
-            );
+            self.millis_in_foreground
+                .insert(date.clone(), self.millis_in_foreground.get(date).unwrap_or(&0) + millis);
         }
         for (date, millis) in other.millis_in_background.iter() {
-            self.millis_in_background.insert(
-                date.clone(),
-                self.millis_in_background.get(date).unwrap_or(&0) + millis,
-            );
+            self.millis_in_background
+                .insert(date.clone(), self.millis_in_background.get(date).unwrap_or(&0) + millis);
         }
         for (date, times) in other.times_opened.iter() {
-            self.times_opened.insert(
-                date.clone(),
-                self.times_opened.get(date).unwrap_or(&0) + times,
-            );
+            self.times_opened
+                .insert(date.clone(), self.times_opened.get(date).unwrap_or(&0) + times);
         }
         for (date, times) in other.times_focused.iter() {
-            self.times_focused.insert(
-                date.clone(),
-                self.times_focused.get(date).unwrap_or(&0) + times,
-            );
+            self.times_focused
+                .insert(date.clone(), self.times_focused.get(date).unwrap_or(&0) + times);
         }
     }
 
@@ -99,10 +87,7 @@ impl ScreenTimeApp {
         let today_date = date_utils::get_today_date();
         self.millis_in_foreground.insert(
             today_date.clone(),
-            self.millis_in_foreground
-                .get(today_date.as_str())
-                .unwrap_or(&0)
-                + millis,
+            self.millis_in_foreground.get(today_date.as_str()).unwrap_or(&0) + millis,
         );
     }
 
@@ -110,10 +95,7 @@ impl ScreenTimeApp {
         let today_date = date_utils::get_today_date();
         self.millis_in_background.insert(
             today_date.clone(),
-            self.millis_in_background
-                .get(today_date.as_str())
-                .unwrap_or(&0)
-                + millis,
+            self.millis_in_background.get(today_date.as_str()).unwrap_or(&0) + millis,
         );
     }
 

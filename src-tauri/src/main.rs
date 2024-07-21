@@ -44,9 +44,9 @@ lazy_static::lazy_static! {
 }
 
 /**
- * 
+ *
  * Tauri commands
- * 
+ *
  */
 
 #[tauri::command]
@@ -60,11 +60,7 @@ fn get_specific_date(day: u32, month: u32, year: i32) -> String {
 }
 
 #[tauri::command]
-fn get_screen_time_apps_sorted(
-    date: &str,
-    sort_mode: &str,
-    reversed: bool,
-) -> Vec<screen_time_app::ScreenTimeApp> {
+fn get_screen_time_apps_sorted(date: &str, sort_mode: &str, reversed: bool) -> Vec<screen_time_app::ScreenTimeApp> {
     commands::get_screen_time_apps_sorted::get_screen_time_apps_sorted(date, sort_mode, reversed)
 }
 
@@ -74,9 +70,9 @@ fn get_screen_time_app_by_name(app_name: &str, ignore_case: bool) -> Option<scre
 }
 
 /**
- * 
+ *
  * Backend stuff
- * 
+ *
  */
 
 fn save_data() {
@@ -129,9 +125,9 @@ fn show_window(window: &tauri::Window) {
 }
 
 /**
- * 
+ *
  * Main function
- * 
+ *
  */
 
 fn main() {
@@ -159,8 +155,7 @@ fn main() {
 
                 // Listen for other instances
                 let window_mutex = Arc::new(Mutex::new(window));
-                let tcp_listener =
-                    TcpListener::bind("127.0.0.1:50505").expect("Failed to bind listener");
+                let tcp_listener = TcpListener::bind("127.0.0.1:50505").expect("Failed to bind listener");
                 std::thread::spawn(move || {
                     for stream in tcp_listener.incoming() {
                         match stream {
@@ -172,10 +167,7 @@ fn main() {
                                         continue;
                                     }
                                     Ok(bytes_read) => {
-                                        let message =
-                                            String::from_utf8_lossy(&buffer[..bytes_read])
-                                                .trim()
-                                                .to_string();
+                                        let message = String::from_utf8_lossy(&buffer[..bytes_read]).trim().to_string();
                                         if message == "show".to_string() {
                                             let window = window_mutex.lock().unwrap();
                                             show_window(&window);
@@ -188,10 +180,7 @@ fn main() {
                                             println!("Operation interrupted, shutting down.");
                                             break;
                                         } else {
-                                            println!(
-                                                "Failed to read message, ignoring. Error: {}",
-                                                e
-                                            );
+                                            println!("Failed to read message, ignoring. Error: {}", e);
                                             continue;
                                         }
                                     }
@@ -242,8 +231,7 @@ fn main() {
             .expect("error while running tauri application");
     } else {
         // Send a message to the other instance to show the window
-        let mut stream =
-            TcpStream::connect("127.0.0.1:50505").expect("Failed to connect to listener");
+        let mut stream = TcpStream::connect("127.0.0.1:50505").expect("Failed to connect to listener");
         stream.write("show".as_bytes()).unwrap();
         stream.flush().unwrap();
         stream.shutdown(std::net::Shutdown::Both).unwrap();

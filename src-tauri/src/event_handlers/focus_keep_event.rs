@@ -11,13 +11,7 @@ use crate::utils::static_manager;
  * Returns:
  *   None
  */
-pub fn on_focus_keep(
-    _pid: u32,
-    _process_name: String,
-    path: String,
-    keep_millis: u64,
-    system: &sysinfo::System,
-) {
+pub fn on_focus_keep(_pid: u32, _process_name: String, path: String, keep_millis: u64, system: &sysinfo::System) {
     let mut screen_time_apps = static_manager::get_screen_time_apps();
 
     // Increase the foreground time of the app in focus

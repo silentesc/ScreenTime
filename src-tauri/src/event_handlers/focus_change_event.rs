@@ -1,7 +1,4 @@
-use crate::{
-    classes::screen_time_app, event_handlers::focus_keep_event::on_focus_keep,
-    utils::static_manager,
-};
+use crate::{classes::screen_time_app, event_handlers::focus_keep_event::on_focus_keep, utils::static_manager};
 
 /**
  * Function to be called when the focus changes
@@ -28,13 +25,7 @@ pub fn on_focus_change(
     system: &sysinfo::System,
 ) {
     // Call the on_focus_keep function because the last process had the focus until now
-    on_focus_keep(
-        last_pid,
-        last_process_name,
-        last_path,
-        poll_interval_millis,
-        system,
-    );
+    on_focus_keep(last_pid, last_process_name, last_path, poll_interval_millis, system);
 
     let mut screen_time_apps = static_manager::get_screen_time_apps();
 

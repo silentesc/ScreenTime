@@ -8,8 +8,7 @@ pub fn get_screen_time_app_by_name(app_name: &str, ignore_case: bool) -> Option<
             if screen_time_app.get_name().to_lowercase() == app_name.to_lowercase() {
                 return Some(screen_time_app.clone());
             }
-        }
-        else {
+        } else {
             if screen_time_app.get_name() == app_name {
                 return Some(screen_time_app.clone());
             }
