@@ -1,8 +1,8 @@
 <template>
     <div class="apps">
-        <div class="app" v-for="app in apps" :key="app.display_name" @click="app.name">
-            <div>{{ app.display_name }}</div>
-            <div class="time">
+        <div class="app" v-for="app in apps" :key="app.display_name" @click="openAppDetails(app.name)">
+            <div class="app-name">{{ app.display_name }}</div>
+            <div class="app-time">
                 <div class="time-bar" :style="{
                     width: `${calculatePercentage(
                         app[sortMode]
@@ -16,17 +16,20 @@
 
 <script>
 import { invoke } from '@tauri-apps/api';
-import { onMounted, ref, watch } from 'vue';
+import { onBeforeUnmount, onMounted, ref, watch } from 'vue';
+import { calculateDisplayValue } from '../utils/timeUtils.js';
 
 export default {
     props: {
         sortMode: String,
     },
-    setup(props) {
+    setup(props, context) {
+        const updateIntervalMillis = 5000;
         const apps = ref([]);
+        let intervalId = null;
 
         const getApps = async () => {
-            apps.value = [];
+            let newApps = [];
 
             const date = await invoke("get_today_date");
             const sortedApps = await invoke("get_screen_time_apps_sorted", { date: date, sortMode: props.sortMode, reversed: true });
@@ -34,7 +37,7 @@ export default {
             for (let app of sortedApps) {
                 switch (props.sortMode) {
                     case "millis_in_foreground":
-                        apps.value.push({
+                    newApps.push({
                             name: app.name,
                             display_name: app.display_name,
                             millis_in_foreground: app.millis_in_foreground[date],
@@ -42,7 +45,7 @@ export default {
                         });
                         break;
                     case "millis_in_background":
-                        apps.value.push({
+                    newApps.push({
                             name: app.name,
                             display_name: app.display_name,
                             millis_in_background: app.millis_in_background[date],
@@ -50,7 +53,7 @@ export default {
                         });
                         break;
                     case "times_opened":
-                        apps.value.push({
+                    newApps.push({
                             name: app.name,
                             display_name: app.display_name,
                             times_opened: app.times_opened[date],
@@ -58,7 +61,7 @@ export default {
                         });
                         break;
                     case "times_focused":
-                        apps.value.push({
+                    newApps.push({
                             name: app.name,
                             display_name: app.display_name,
                             times_focused: app.times_focused[date],
@@ -67,6 +70,8 @@ export default {
                         break;
                 }
             }
+
+            apps.value = newApps;
         };
 
         const calculatePercentage = (value) => {
@@ -75,29 +80,28 @@ export default {
             return percentage;
         };
 
-        const calculateDisplayValue = (value) => {
-            value = value / 1000;
-            if (value < 60) {
-                return `${Math.floor(value)}s`;
-            }
-            else if (value < 3600) {
-                return `${Math.floor(value / 60)}m ${Math.floor(value % 60)}s`;
-            }
-            else {
-                return `${Math.floor(value / 3600)}h ${Math.floor((value % 3600) / 60)}m`;
-            }
-        };
-
         const openAppDetails = (appName) => {
-            console.log(appName);
+            context.emit("open_app_details", appName);
         };
 
-        watch(() => props.sortMode, () => {
-            getApps();
+        const startUpdateLoop = async () => {
+            intervalId = setInterval(async () => {
+                await getApps();
+            }, updateIntervalMillis);
+        };
+
+        watch(() => props.sortMode, async () => {
+            await getApps();
         });
 
-        onMounted(() => {
-            getApps();
+        onMounted(async () => {
+            await getApps();
+            startUpdateLoop();
+        });
+
+        onBeforeUnmount(() => {
+            clearInterval(intervalId);
+            intervalId = null;
         });
 
         return { apps, getApps, calculatePercentage, openAppDetails };
@@ -107,6 +111,8 @@ export default {
 
 <style>
 .apps {
+    margin: 1rem;
+    height: fit-content;
     display: grid;
     grid-template-columns: repeat(1, 1fr);
     gap: 1rem;
@@ -115,28 +121,35 @@ export default {
 
 .app {
     padding: 1rem 2rem;
-    background: #838383;
-    border: 2px solid rgb(204, 204, 204);
+    background: #4c5566;
+    border: 2px solid #687691;
     border-radius: 0.5rem;
     cursor: pointer;
+    user-select: none;
+    height: fit-content;
 }
 
 .app:hover {
-    background: #9c9c9c;
+    background: #59657e;
 }
 
 .app div {
     white-space: nowrap;
 }
 
-.time {
+.app-name {
+    font-size: 1.4rem;
+}
+
+.app-time {
     display: flex;
     align-items: center;
+    color: #dbdbdb;
 }
 
 .time-bar {
     height: 0.3rem;
-    background-color: #ffffff;
+    background-color: #dbdbdb;
     border-radius: 0.15rem;
     display: inline-block;
     vertical-align: middle;

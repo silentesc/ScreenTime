@@ -30,3 +30,19 @@ export default {
     },
 };
 </script>
+
+<style scoped>
+.sidebar {
+    display: flex;
+    justify-content: center;
+    margin-top: 20px;
+}
+
+select {
+    padding: 10px;
+    font-size: 16px;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+    outline: none;
+}
+</style>
