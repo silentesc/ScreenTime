@@ -25,13 +25,13 @@
                     {{ app.millis_in_background }}
                 </div>
                 <div class="grid-item">
-                    Times opened:
+                    Times Opened:
                 </div>
                 <div class="grid-item">
                     {{ app.times_opened }}
                 </div>
                 <div class="grid-item">
-                    Times focused:
+                    Times Focused:
                 </div>
                 <div class="grid-item">
                     {{ app.times_focused }}
@@ -45,6 +45,7 @@
 import { invoke } from '@tauri-apps/api';
 import { onBeforeUnmount, onMounted, ref } from 'vue';
 import { calculateDisplayValue } from '../utils/timeUtils.js';
+import { getCurrentDate } from '../utils/dateUtils.js';
 
 export default {
     props: {
@@ -60,7 +61,7 @@ export default {
         };
 
         const getApp = async () => {
-            const date = await invoke("get_today_date");
+            const date = getCurrentDate();
             app.value = await invoke("get_screen_time_app_by_name", { appName: props.appName, ignoreCase: false });
             app.value.path = app.value.path;
             app.value.millis_in_foreground = calculateDisplayValue(app.value.millis_in_foreground[date] || 0);
@@ -120,8 +121,7 @@ export default {
 }
 
 .app-name {
-    font-size: 1.5rem;
-    font-weight: bold;
+    font-size: 2rem;
     margin: 1rem;
 }
 

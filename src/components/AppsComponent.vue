@@ -16,56 +16,59 @@
 
 <script>
 import { invoke } from '@tauri-apps/api';
-import { onBeforeUnmount, onMounted, ref, watch } from 'vue';
+import { onBeforeUnmount, onMounted, ref, watch, watchEffect } from 'vue';
 import { calculateDisplayValue } from '../utils/timeUtils.js';
 
 export default {
     props: {
         sortMode: String,
+        date: String,
     },
     setup(props, context) {
         const updateIntervalMillis = 5000;
         const apps = ref([]);
         let intervalId = null;
 
+        const sortMode = ref(props.sortMode);
+        const date = ref(props.date);
+
         const getApps = async () => {
             let newApps = [];
 
-            const date = await invoke("get_today_date");
-            const sortedApps = await invoke("get_screen_time_apps_sorted", { date: date, sortMode: props.sortMode, reversed: true });
+            const sortedApps = await invoke("get_screen_time_apps_sorted", { date: date.value, sortMode: sortMode.value, reversed: true });
 
             for (let app of sortedApps) {
                 switch (props.sortMode) {
                     case "millis_in_foreground":
-                    newApps.push({
+                        newApps.push({
                             name: app.name,
                             display_name: app.display_name,
-                            millis_in_foreground: app.millis_in_foreground[date],
-                            display_value: calculateDisplayValue(app.millis_in_foreground[date]),
+                            millis_in_foreground: app.millis_in_foreground[date.value],
+                            display_value: calculateDisplayValue(app.millis_in_foreground[date.value]),
                         });
                         break;
                     case "millis_in_background":
-                    newApps.push({
+                        newApps.push({
                             name: app.name,
                             display_name: app.display_name,
-                            millis_in_background: app.millis_in_background[date],
-                            display_value: calculateDisplayValue(app.millis_in_background[date]),
+                            millis_in_background: app.millis_in_background[date.value],
+                            display_value: calculateDisplayValue(app.millis_in_background[date.value]),
                         });
                         break;
                     case "times_opened":
-                    newApps.push({
+                        newApps.push({
                             name: app.name,
                             display_name: app.display_name,
-                            times_opened: app.times_opened[date],
-                            display_value: app.times_opened[date],
+                            times_opened: app.times_opened[date.value],
+                            display_value: app.times_opened[date.value],
                         });
                         break;
                     case "times_focused":
-                    newApps.push({
+                        newApps.push({
                             name: app.name,
                             display_name: app.display_name,
-                            times_focused: app.times_focused[date],
-                            display_value: app.times_focused[date],
+                            times_focused: app.times_focused[date.value],
+                            display_value: app.times_focused[date.value],
                         });
                         break;
                 }
@@ -90,7 +93,9 @@ export default {
             }, updateIntervalMillis);
         };
 
-        watch(() => props.sortMode, async () => {
+        watch(props, async () => {
+            sortMode.value = props.sortMode;
+            date.value = props.date;
             await getApps();
         });
 
@@ -104,7 +109,7 @@ export default {
             intervalId = null;
         });
 
-        return { apps, getApps, calculatePercentage, openAppDetails };
+        return { apps, sortMode, date, getApps, calculatePercentage, openAppDetails };
     }
 };
 </script>

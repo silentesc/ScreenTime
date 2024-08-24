@@ -51,16 +51,6 @@ lazy_static::lazy_static! {
  */
 
 #[tauri::command]
-fn get_today_date() -> String {
-    utils::date_utils::get_today_date()
-}
-
-#[tauri::command]
-fn get_specific_date(day: u32, month: u32, year: i32) -> String {
-    utils::date_utils::get_specific_date(day, month, year)
-}
-
-#[tauri::command]
 fn get_screen_time_apps_sorted(date: &str, sort_mode: &str, reversed: bool) -> Vec<screen_time_app::ScreenTimeApp> {
     commands::get_screen_time_apps_sorted::get_screen_time_apps_sorted(date, sort_mode, reversed)
 }
@@ -229,8 +219,6 @@ fn main() {
             })
             .invoke_handler(tauri::generate_handler![
                 get_screen_time_apps_sorted,
-                get_today_date,
-                get_specific_date,
                 get_screen_time_app_by_name,
                 open_path
             ])

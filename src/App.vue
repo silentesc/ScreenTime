@@ -1,10 +1,11 @@
 <template>
-    <div class="app-content">
+    <div class="app-content" v-if="isAppOpen">
         <div class="sidebar-parent">
-            <SidebarComponent :sortMode="sortMode" @sort_mode_changed="sortModeChanged" />
+            <SidebarComponent :sortMode="sortMode" :date="date" @sort_mode_changed="sortModeChanged"
+                @date_changed="date_changed" />
         </div>
         <div class="apps-parent">
-            <AppsComponent :sortMode="sortMode" @open_app_details="openAppDetails" />
+            <AppsComponent :sortMode="sortMode" :date="date" @open_app_details="openAppDetails" />
         </div>
     </div>
     <div v-if="openedAppDetail">
@@ -13,10 +14,12 @@
 </template>
 
 <script>
-import { ref } from 'vue';
+import { onMounted, ref } from 'vue';
 import SidebarComponent from './components/SidebarComponent.vue';
 import AppsComponent from './components/AppsComponent.vue';
 import AppDetailComponent from './components/AppDetailComponent.vue';
+import { getCurrentDate } from './utils/dateUtils.js';
+import { appWindow } from '@tauri-apps/api/window';
 
 export default {
     components: {
@@ -26,10 +29,27 @@ export default {
     },
     setup() {
         const sortMode = ref("millis_in_foreground");
+        const date = ref(getCurrentDate());
         const openedAppDetail = ref(null);
+
+        const isAppOpen = ref(false);
+
+        const listenForAppClose = async () => {
+            await appWindow.onResized(async () => {
+                isAppOpen.value = await appWindow.isVisible();
+                if (!isAppOpen.value) {
+                    closeAppDetails();
+                }
+            });
+        };
+        listenForAppClose();
 
         const sortModeChanged = (newSortMode) => {
             sortMode.value = newSortMode;
+        };
+
+        const date_changed = (newDate) => {
+            date.value = newDate;
         };
 
         const openAppDetails = (appName) => {
@@ -40,10 +60,17 @@ export default {
             openedAppDetail.value = null;
         };
 
+        onMounted(() => {
+            isAppOpen.value = true;
+        });
+
         return {
             sortMode,
+            date,
             openedAppDetail,
+            isAppOpen,
             sortModeChanged,
+            date_changed,
             openAppDetails,
             closeAppDetails,
         };
