@@ -10,7 +10,7 @@
                     Path:
                 </div>
                 <div class="grid-item">
-                    {{ app.path }}
+                    <a @click="openPath">{{ app.path }}</a>
                 </div>
                 <div class="grid-item">
                     Focus Time:
@@ -75,6 +75,10 @@ export default {
             }, updateIntervalMillis);
         };
 
+        const openPath = () => {
+            invoke("open_path", { path: app.value.path });
+        };
+
         onMounted(async () => {
             await getApp();
             startUpdateLoop();
@@ -89,6 +93,7 @@ export default {
             app,
             closeModal,
             getApp,
+            openPath,
         };
     },
 }
@@ -131,5 +136,12 @@ export default {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+}
+
+a {
+    cursor: pointer;
+}
+a:hover {
+    text-decoration: underline;
 }
 </style>
