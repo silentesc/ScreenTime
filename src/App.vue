@@ -4,8 +4,11 @@
             <SidebarComponent :sortMode="sortMode" @sort_mode_changed="sortModeChanged" />
         </div>
         <div class="apps-parent">
-            <AppsComponent :sortMode="sortMode" />
+            <AppsComponent :sortMode="sortMode" @open_app_details="openAppDetails" />
         </div>
+    </div>
+    <div v-if="openedAppDetail">
+        <AppDetailComponent :appName="openedAppDetail" @close_app_details="closeAppDetails" />
     </div>
 </template>
 
@@ -13,22 +16,36 @@
 import { ref } from 'vue';
 import SidebarComponent from './components/SidebarComponent.vue';
 import AppsComponent from './components/AppsComponent.vue';
+import AppDetailComponent from './components/AppDetailComponent.vue';
 
 export default {
     components: {
         SidebarComponent,
         AppsComponent,
+        AppDetailComponent,
     },
     setup() {
         const sortMode = ref("millis_in_foreground");
+        const openedAppDetail = ref(null);
 
         const sortModeChanged = (newSortMode) => {
             sortMode.value = newSortMode;
         };
 
+        const openAppDetails = (appName) => {
+            openedAppDetail.value = appName;
+        };
+
+        const closeAppDetails = () => {
+            openedAppDetail.value = null;
+        };
+
         return {
             sortMode,
+            openedAppDetail,
             sortModeChanged,
+            openAppDetails,
+            closeAppDetails,
         };
     },
 };
@@ -42,7 +59,6 @@ export default {
     font-weight: 400;
 
     color: #fff;
-    background-color: #757575;
 
     font-synthesis: none;
     text-rendering: optimizeLegibility;
@@ -57,13 +73,16 @@ export default {
 
 .sidebar-parent {
     width: 250px;
+    height: 100vh;
+    background-color: #222831;
 }
 
 .apps-parent {
     display: flex;
     justify-content: center;
     width: 100%;
-    max-height: 98vh;
+    max-height: 100vh;
+    background-color: #31363F;
     overflow-y: auto;
     scrollbar-width: thin;
     scrollbar-color: #ffffff rgba(0, 0, 0, 0.1);
