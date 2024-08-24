@@ -6,6 +6,7 @@ use single_instance::SingleInstance;
 use std::{
     io::{Read, Write},
     net::{TcpListener, TcpStream},
+    process::Command,
     sync::{Arc, Mutex},
 };
 use tauri::{CustomMenuItem, Manager, SystemTray, SystemTrayEvent, SystemTrayMenu};
@@ -67,6 +68,11 @@ fn get_screen_time_apps_sorted(date: &str, sort_mode: &str, reversed: bool) -> V
 #[tauri::command]
 fn get_screen_time_app_by_name(app_name: &str, ignore_case: bool) -> Option<screen_time_app::ScreenTimeApp> {
     commands::get_screen_time_app_by_name::get_screen_time_app_by_name(app_name, ignore_case)
+}
+
+#[tauri::command]
+fn open_path(path: String) {
+    let _ = Command::new("explorer.exe").arg("/select,").arg(path).spawn();
 }
 
 /**
@@ -225,7 +231,8 @@ fn main() {
                 get_screen_time_apps_sorted,
                 get_today_date,
                 get_specific_date,
-                get_screen_time_app_by_name
+                get_screen_time_app_by_name,
+                open_path
             ])
             .run(tauri::generate_context!())
             .expect("error while running tauri application");
