@@ -133,9 +133,14 @@ export default {
 }
 
 .grid-item {
+    width: 100%;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+}
+.grid-item:hover {
+    white-space: normal;
+    word-break: break-all;
 }
 
 a {
