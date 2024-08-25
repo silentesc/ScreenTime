@@ -37,7 +37,7 @@ fn listen_for_processes(poll_interval_millis: u64) {
             if !process.exe().is_some() {
                 continue;
             }
-            let process_name = process.name().to_string();
+            let process_name = process.name().replace(".exe", "").to_string();
             let process_path = process.exe().unwrap().to_string_lossy().to_string();
 
             temp_processes.push(process_path.clone());

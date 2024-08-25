@@ -66,7 +66,7 @@ fn listen_for_focus_change(poll_interval_millis: u64) {
                 found = true;
                 focus_change_event::on_focus_change(
                     pid.as_u32(),
-                    String::from(process.name()),
+                    String::from(process.name().replace(".exe", "")),
                     process.exe().unwrap().to_string_lossy().to_string(),
                     last_pid,
                     last_process_name.clone(),
@@ -75,7 +75,7 @@ fn listen_for_focus_change(poll_interval_millis: u64) {
                     &system,
                 );
                 last_pid = pid.as_u32();
-                last_process_name = String::from(process.name());
+                last_process_name = String::from(process.name().replace(".exe", ""));
                 last_path = process.exe().unwrap().to_string_lossy().to_string();
                 break;
             }
