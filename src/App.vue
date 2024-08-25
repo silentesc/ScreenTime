@@ -9,7 +9,7 @@
         </div>
     </div>
     <div v-if="openedAppDetail">
-        <AppDetailComponent :appName="openedAppDetail" @close_app_details="closeAppDetails" />
+        <AppDetailComponent :appName="openedAppDetail" :date="date" @close_app_details="closeAppDetails" />
     </div>
 </template>
 
