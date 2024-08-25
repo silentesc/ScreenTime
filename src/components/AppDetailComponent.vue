@@ -45,11 +45,11 @@
 import { invoke } from '@tauri-apps/api';
 import { onBeforeUnmount, onMounted, ref } from 'vue';
 import { calculateDisplayValue } from '../utils/timeUtils.js';
-import { getCurrentDate } from '../utils/dateUtils.js';
 
 export default {
     props: {
         appName: String,
+        date: String,
     },
     setup(props, context) {
         const updateIntervalMillis = 1000;
@@ -61,13 +61,12 @@ export default {
         };
 
         const getApp = async () => {
-            const date = getCurrentDate();
             app.value = await invoke("get_screen_time_app_by_name", { appName: props.appName, ignoreCase: false });
             app.value.path = app.value.path;
-            app.value.millis_in_foreground = calculateDisplayValue(app.value.millis_in_foreground[date] || 0);
-            app.value.millis_in_background = calculateDisplayValue(app.value.millis_in_background[date] || 0);
-            app.value.times_opened = app.value.times_opened[date] || 0;
-            app.value.times_focused = app.value.times_focused[date] || 0;
+            app.value.millis_in_foreground = calculateDisplayValue(app.value.millis_in_foreground[props.date] || 0);
+            app.value.millis_in_background = calculateDisplayValue(app.value.millis_in_background[props.date] || 0);
+            app.value.times_opened = app.value.times_opened[props.date] || 0;
+            app.value.times_focused = app.value.times_focused[props.date] || 0;
         };
 
         const startUpdateLoop = async () => {
@@ -138,6 +137,7 @@ export default {
     overflow: hidden;
     text-overflow: ellipsis;
 }
+
 .grid-item:hover {
     white-space: normal;
     word-break: break-all;
