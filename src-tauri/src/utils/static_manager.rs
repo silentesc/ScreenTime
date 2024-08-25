@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, Mutex, TryLockError};
 
 use crate::classes::screen_time_app::ScreenTimeApp;
 use std::thread;
@@ -12,11 +12,15 @@ lazy_static::lazy_static!(
 pub fn get_screen_time_apps() -> HashMap<String, ScreenTimeApp> {
     match SCREEN_TIME_APPS.try_lock() {
         Ok(screen_time_apps) => screen_time_apps.clone(),
-        Err(_) => {
-            println!("Failed to get screen time apps, trying again in 10ms...");
-            thread::sleep(Duration::from_millis(10));
-            get_screen_time_apps()
-        }
+        Err(err) => match err {
+            TryLockError::WouldBlock => {
+                thread::sleep(Duration::from_millis(10));
+                get_screen_time_apps()
+            }
+            TryLockError::Poisoned(_) => {
+                return HashMap::new();
+            }
+        },
     }
 }
 
@@ -31,11 +35,15 @@ pub fn insert_screen_time_app(app: ScreenTimeApp) -> HashMap<String, ScreenTimeA
             drop(screen_time_apps);
             get_screen_time_apps()
         }
-        Err(_) => {
-            println!("Failed to insert into screen time apps, trying again in 10ms...");
-            thread::sleep(Duration::from_millis(10));
-            insert_screen_time_app(app)
-        }
+        Err(err) => match err {
+            TryLockError::WouldBlock => {
+                thread::sleep(Duration::from_millis(10));
+                get_screen_time_apps()
+            }
+            TryLockError::Poisoned(_) => {
+                return HashMap::new();
+            }
+        },
     }
 }
 
@@ -50,10 +58,14 @@ pub fn remove_screen_time_app(path: &str, only_first: bool) -> HashMap<String, S
             drop(screen_time_apps);
             get_screen_time_apps()
         }
-        Err(_) => {
-            println!("Failed to remove from screen time apps, trying again in 10ms...");
-            thread::sleep(Duration::from_millis(10));
-            remove_screen_time_app(path, only_first)
-        }
+        Err(err) => match err {
+            TryLockError::WouldBlock => {
+                thread::sleep(Duration::from_millis(10));
+                get_screen_time_apps()
+            }
+            TryLockError::Poisoned(_) => {
+                return HashMap::new();
+            }
+        },
     }
 }
