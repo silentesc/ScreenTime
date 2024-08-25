@@ -2,9 +2,9 @@
     <div class="sidebar">
         <label>Select Date</label>
         <div class="date-div">
-            <button class="date-button arrow-left" @click="addDaysToDate(-1)">{{ "<" }}</button>
+            <button class="arrow-left" @click="addDaysToDate(-1)">{{ "<" }}</button>
             <span class="date" @click="resetDate">{{ selectedDate }}</span>
-            <button class="date-button arrow-right" @click="addDaysToDate(1)">{{ ">" }}</button>
+            <button class="arrow-right" @click="addDaysToDate(1)">{{ ">" }}</button>
         </div>
 
         <br>
@@ -16,11 +16,13 @@
             <option value="times_opened">Times Opened</option>
             <option value="times_focused">Times Focused</option>
         </select>
+
+        <span class="settings-emoji" @click="handleSettingsClick">⚙️</span>
     </div>
 </template>
 
 <script>
-import { onMounted, onUnmounted, ref } from 'vue';
+import { ref } from 'vue';
 import { getCurrentDate, getDateWithOffset, isDateStrValid } from '../utils/dateUtils.js';
 
 export default {
@@ -34,6 +36,10 @@ export default {
 
         const handleSortModeChange = (event) => {
             context.emit("sort_mode_changed", event.target.value);
+        };
+
+        const handleSettingsClick = () => {
+            context.emit("settings_clicked");
         };
 
         const addDaysToDate = (days) => {
@@ -58,6 +64,7 @@ export default {
             selectedSortMode,
             selectedDate,
             handleSortModeChange,
+            handleSettingsClick,
             addDaysToDate,
             resetDate,
         };
@@ -99,23 +106,31 @@ select {
     cursor: pointer;
 }
 
-.date-button {
-    font-size: 1.4rem;
-    font-weight: bold;
+button {
     background-color: #31363F;
     border: 1px solid #687691;
+    border-radius: 0.25rem;
     color: #fff;
     cursor: pointer;
     user-select: none;
 }
 
 .arrow-left {
-    border-top-left-radius: 0.25rem;
-    border-bottom-left-radius: 0.25rem;
+    font-size: 1.4rem;
+    border-radius: 0.25rem 0rem 0rem 0.25rem;
 }
 
 .arrow-right {
-    border-top-right-radius: 0.25rem;
-    border-bottom-right-radius: 0.25rem;
+    font-size: 1.4rem;
+    border-radius: 0rem 0.25rem 0.25rem 0rem;
+}
+
+.settings-emoji {
+    font-size: 2.5rem;
+    position: absolute;
+    bottom: 1rem;
+    left: 0.5rem;
+    cursor: pointer;
+    user-select: none;
 }
 </style>

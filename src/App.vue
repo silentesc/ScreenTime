@@ -1,8 +1,7 @@
 <template>
     <div class="app-content" v-if="isAppOpen">
         <div class="sidebar-parent">
-            <SidebarComponent :sortMode="sortMode" :date="date" @sort_mode_changed="sortModeChanged"
-                @date_changed="date_changed" />
+            <SidebarComponent :sortMode="sortMode" :date="date" @sort_mode_changed="sortModeChanged" @settings_clicked="settingsClicked" @date_changed="dateChanged" />
         </div>
         <div class="apps-parent">
             <AppsComponent :sortMode="sortMode" :date="date" @open_app_details="openAppDetails" />
@@ -11,6 +10,9 @@
     <div v-if="openedAppDetail">
         <AppDetailComponent :appName="openedAppDetail" :date="date" @close_app_details="closeAppDetails" />
     </div>
+    <div v-if="openedSettings">
+        <SettingsComponent @close_settings="closeSettings" />
+    </div>
 </template>
 
 <script>
@@ -18,6 +20,7 @@ import { onMounted, ref } from 'vue';
 import SidebarComponent from './components/SidebarComponent.vue';
 import AppsComponent from './components/AppsComponent.vue';
 import AppDetailComponent from './components/AppDetailComponent.vue';
+import SettingsComponent from './components/SettingsComponent.vue';
 import { getCurrentDate } from './utils/dateUtils.js';
 import { appWindow } from '@tauri-apps/api/window';
 
@@ -26,11 +29,13 @@ export default {
         SidebarComponent,
         AppsComponent,
         AppDetailComponent,
+        SettingsComponent,
     },
     setup() {
         const sortMode = ref("millis_in_foreground");
         const date = ref(getCurrentDate());
         const openedAppDetail = ref(null);
+        const openedSettings = ref(false);
 
         const isAppOpen = ref(false);
 
@@ -39,6 +44,7 @@ export default {
                 isAppOpen.value = await appWindow.isVisible();
                 if (!isAppOpen.value) {
                     closeAppDetails();
+                    closeSettings();
                 }
             });
         };
@@ -48,7 +54,11 @@ export default {
             sortMode.value = newSortMode;
         };
 
-        const date_changed = (newDate) => {
+        const settingsClicked = () => {
+            openedSettings.value = true;
+        };
+
+        const dateChanged = (newDate) => {
             date.value = newDate;
         };
 
@@ -60,6 +70,10 @@ export default {
             openedAppDetail.value = null;
         };
 
+        const closeSettings = () => {
+            openedSettings.value = false;
+        };
+
         onMounted(() => {
             isAppOpen.value = true;
         });
@@ -68,11 +82,14 @@ export default {
             sortMode,
             date,
             openedAppDetail,
+            openedSettings,
             isAppOpen,
             sortModeChanged,
-            date_changed,
+            settingsClicked,
+            dateChanged,
             openAppDetails,
             closeAppDetails,
+            closeSettings,
         };
     },
 };
