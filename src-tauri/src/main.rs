@@ -36,9 +36,9 @@ pub mod utils {
 }
 
 pub mod commands {
+    pub mod change_display_name;
     pub mod get_screen_time_app_by_name;
     pub mod get_screen_time_apps_sorted;
-    pub mod change_display_name;
 }
 
 lazy_static::lazy_static! {
@@ -50,6 +50,14 @@ lazy_static::lazy_static! {
  * Tauri commands
  *
  */
+
+#[tauri::command]
+fn get_screen_time_apps() -> Vec<screen_time_app::ScreenTimeApp> {
+    let screen_time_apps: Vec<screen_time_app::ScreenTimeApp> = utils::static_manager::get_screen_time_apps().values().cloned().collect();
+    let mut mut_apps = screen_time_apps.clone();
+    mut_apps.sort_by(|a, b| a.get_display_name().to_lowercase().cmp(&b.get_display_name().to_lowercase()));
+    mut_apps
+}
 
 #[tauri::command]
 fn get_screen_time_apps_sorted(date: &str, sort_mode: &str, reversed: bool) -> Vec<screen_time_app::ScreenTimeApp> {
@@ -224,6 +232,7 @@ fn main() {
                 _ => {}
             })
             .invoke_handler(tauri::generate_handler![
+                get_screen_time_apps,
                 get_screen_time_apps_sorted,
                 get_screen_time_app_by_name,
                 change_display_name,
