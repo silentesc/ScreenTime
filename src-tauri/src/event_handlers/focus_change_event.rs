@@ -62,7 +62,9 @@ pub fn on_focus_change(
                 }
             }
         } else {
-            let new_app = screen_time_app::ScreenTimeApp::new(process_name.clone(), path.clone());
+            let hidden_apps = [];
+            let hidden = hidden_apps.contains(&process_name.as_str());
+            let new_app = screen_time_app::ScreenTimeApp::new(process_name.clone(), path.clone(), hidden);
             static_manager::insert_screen_time_app(new_app);
         }
     }

@@ -36,7 +36,9 @@ pub mod utils {
 }
 
 pub mod commands {
+    pub mod get_screen_time_apps;
     pub mod change_display_name;
+    pub mod change_hidden;
     pub mod get_screen_time_app_by_name;
     pub mod get_screen_time_apps_sorted;
 }
@@ -53,10 +55,7 @@ lazy_static::lazy_static! {
 
 #[tauri::command]
 fn get_screen_time_apps() -> Vec<screen_time_app::ScreenTimeApp> {
-    let screen_time_apps: Vec<screen_time_app::ScreenTimeApp> = utils::static_manager::get_screen_time_apps().values().cloned().collect();
-    let mut mut_apps = screen_time_apps.clone();
-    mut_apps.sort_by(|a, b| a.get_display_name().to_lowercase().cmp(&b.get_display_name().to_lowercase()));
-    mut_apps
+    commands::get_screen_time_apps::get_screen_time_apps()
 }
 
 #[tauri::command]
@@ -72,6 +71,11 @@ fn get_screen_time_app_by_name(app_name: &str, ignore_case: bool) -> Option<scre
 #[tauri::command]
 fn change_display_name(app_path: &str, new_display_name: &str) -> bool {
     commands::change_display_name::change_display_name(app_path, new_display_name)
+}
+
+#[tauri::command]
+fn change_hidden(app_path: &str, hidden: bool) -> bool {
+    commands::change_hidden::change_hidden(app_path, hidden)
 }
 
 #[tauri::command]
@@ -236,6 +240,7 @@ fn main() {
                 get_screen_time_apps_sorted,
                 get_screen_time_app_by_name,
                 change_display_name,
+                change_hidden,
                 open_path
             ])
             .run(tauri::generate_context!())

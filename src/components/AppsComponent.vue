@@ -25,7 +25,7 @@ export default {
         date: String,
     },
     setup(props, context) {
-        const updateIntervalMillis = 5000;
+        const updateIntervalMillis = 3000;
         const apps = ref([]);
         let intervalId = null;
 
