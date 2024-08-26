@@ -31,5 +31,7 @@ pub fn get_screen_time_apps_sorted(date: &str, sort_mode: &str, reversed: bool) 
         screen_time_apps.reverse();
     }
 
+    screen_time_apps.retain(|app| !app.is_hidden());
+
     screen_time_apps
 }

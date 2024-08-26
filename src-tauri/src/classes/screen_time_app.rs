@@ -7,6 +7,7 @@ use crate::utils::{date_utils, static_manager};
 #[derive(Serialize, Deserialize, Clone)]
 pub struct ScreenTimeApp {
     display_name: String,
+    hidden: bool,
     name: String,
     path: String,
     millis_in_foreground: HashMap<String, u64>,
@@ -20,10 +21,10 @@ impl ScreenTimeApp {
      * Static methods
      */
 
-    pub fn new(name: String, path: String) -> ScreenTimeApp {
-        let display_name = name.clone();
+    pub fn new(name: String, path: String, hidden: bool) -> ScreenTimeApp {
         ScreenTimeApp {
-            display_name,
+            display_name: name.clone(),
+            hidden,
             name,
             path,
             millis_in_foreground: HashMap::new(),
@@ -123,6 +124,10 @@ impl ScreenTimeApp {
         &self.display_name
     }
 
+    pub fn is_hidden(&self) -> bool {
+        self.hidden
+    }
+
     pub fn get_name(&self) -> &str {
         &self.name
     }
@@ -152,6 +157,10 @@ impl ScreenTimeApp {
      */
     pub fn set_display_name(&mut self, display_name: String) {
         self.display_name = display_name;
+    }
+
+    pub fn set_hidden(&mut self, hidden: bool) {
+        self.hidden = hidden;
     }
 
     pub fn set_path(&mut self, path: String) {
