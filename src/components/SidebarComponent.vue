@@ -1,26 +1,3 @@
-<template>
-    <div class="sidebar">
-        <label>Select Date</label>
-        <div class="date-div">
-            <button class="arrow-left" @click="addDaysToDate(-1)">{{ "<" }}</button>
-            <span class="date" @click="resetDate">{{ selectedDate }}</span>
-            <button class="arrow-right" @click="addDaysToDate(1)">{{ ">" }}</button>
-        </div>
-
-        <br>
-
-        <label>Sorting Mode</label>
-        <select v-model="selectedSortMode" @change="handleSortModeChange">
-            <option value="millis_in_foreground">Focus Time</option>
-            <option value="millis_in_background">Background Time</option>
-            <option value="times_opened">Times Opened</option>
-            <option value="times_focused">Times Focused</option>
-        </select>
-
-        <span class="settings-emoji" @click="handleSettingsClick">⚙️</span>
-    </div>
-</template>
-
 <script>
 import { ref } from 'vue';
 import { getCurrentDate, getDateWithOffset, isDateStrValid } from '../utils/dateUtils.js';
@@ -71,6 +48,29 @@ export default {
     },
 };
 </script>
+
+<template>
+    <div class="sidebar">
+        <label>Select Date</label>
+        <div class="date-div">
+            <button class="arrow-left" @click="addDaysToDate(-1)">{{ "<" }}</button>
+            <span class="date" @click="resetDate">{{ selectedDate }}</span>
+            <button class="arrow-right" @click="addDaysToDate(1)">{{ ">" }}</button>
+        </div>
+
+        <br>
+
+        <label>Sorting Mode</label>
+        <select v-model="selectedSortMode" @change="handleSortModeChange">
+            <option value="millis_in_foreground">Focus Time</option>
+            <option value="millis_in_background">Background Time</option>
+            <option value="times_opened">Times Opened</option>
+            <option value="times_focused">Times Focused</option>
+        </select>
+
+        <span class="settings-emoji" @click="handleSettingsClick">⚙️</span>
+    </div>
+</template>
 
 <style scoped>
 .sidebar {

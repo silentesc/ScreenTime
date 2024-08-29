@@ -1,11 +1,3 @@
-<template>
-    <div class="modal" @mousedown.self="closeModal">
-        <div class="modal-content" :style="{ width: modalWidth }">
-            <slot></slot>
-        </div>
-    </div>
-</template>
-
 <script>
 export default {
     props: {
@@ -25,6 +17,14 @@ export default {
     },
 }
 </script>
+
+<template>
+    <div class="modal" @mousedown.self="closeModal">
+        <div class="modal-content" :style="{ width: modalWidth }">
+            <slot></slot>
+        </div>
+    </div>
+</template>
 
 <style scoped>
 .modal {

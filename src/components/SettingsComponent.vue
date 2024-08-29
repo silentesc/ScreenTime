@@ -74,7 +74,7 @@ export default {
 .settings {
     display: grid;
     grid-template-columns: repeat(1, 1fr);
-    gap: 1rem;
+    gap: 0.5rem;
 }
 
 .settings-item {
