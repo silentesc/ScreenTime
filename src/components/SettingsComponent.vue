@@ -61,7 +61,8 @@ export default {
         <h1>Settings</h1>
         <div class="settings" v-if="apps">
             <div class="settings-item" v-for="app in apps" :key="app">
-                <input class="checkbox-hidden" type="checkbox" v-model="app.hidden" @change="changeHidden(app)">
+                <input class="checkbox-hidden" type="checkbox" :id="app.path" v-model="app.hidden" @change="changeHidden(app)">
+                <label class="label-hidden" :for="app.path">Hide</label>
                 <input
                     :class="{ 'display-name': true, 'app-success': appsSuccess.includes(app.path), 'app-error': appsError.includes(app.path) }"
                     type="text" v-model="app.display_name" spellcheck="false" @keypress.enter="changeDisplayName(app)">
@@ -74,7 +75,7 @@ export default {
 .settings {
     display: grid;
     grid-template-columns: repeat(1, 1fr);
-    gap: 0.5rem;
+    gap: 0.7rem;
 }
 
 .settings-item {
@@ -83,9 +84,14 @@ export default {
 }
 
 .checkbox-hidden {
-    margin-right: 1rem;
     width: 1.5rem;
     height: 1.5rem;
+    cursor: pointer;
+}
+
+.label-hidden {
+    margin-right: 1.5rem;
+    font-size: 1.2rem;
     cursor: pointer;
 }
 

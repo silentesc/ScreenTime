@@ -48,5 +48,7 @@ export default {
     padding: 20px;
     border-radius: 5px;
     font-size: 1.2rem;
+    margin-top: 1rem;
+    margin-bottom: 1rem;
 }
 </style>
