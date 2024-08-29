@@ -1,19 +1,3 @@
-<template>
-    <div class="apps">
-        <div class="app" v-for="app in apps" :key="app.display_name" @click="openAppDetails(app.name)">
-            <div class="app-name">{{ app.display_name }}</div>
-            <div class="app-time">
-                <div class="time-bar" :style="{
-                    width: `${calculatePercentage(
-                        app[sortMode]
-                    )}%`,
-                }"></div>
-                {{ app.display_value }}
-            </div>
-        </div>
-    </div>
-</template>
-
 <script>
 import { invoke } from '@tauri-apps/api';
 import { onBeforeUnmount, onMounted, ref, watch, watchEffect } from 'vue';
@@ -113,6 +97,22 @@ export default {
     }
 };
 </script>
+
+<template>
+    <div class="apps">
+        <div class="app" v-for="app in apps" :key="app.display_name" @click="openAppDetails(app.name)">
+            <div class="app-name">{{ app.display_name }}</div>
+            <div class="app-time">
+                <div class="time-bar" :style="{
+                    width: `${calculatePercentage(
+                        app[sortMode]
+                    )}%`,
+                }"></div>
+                {{ app.display_value }}
+            </div>
+        </div>
+    </div>
+</template>
 
 <style>
 .apps {

@@ -1,44 +1,3 @@
-<template>
-    <ModalComponent @close_modal="closeModal" v-if="app">
-        <div class="app-name">
-            {{ app.display_name }}
-        </div>
-        <hr>
-        <div class="grid">
-            <div class="grid-item">
-                Path:
-            </div>
-            <div class="grid-item">
-                <a @click="openPath">{{ app.path }}</a>
-            </div>
-            <div class="grid-item">
-                Focus Time:
-            </div>
-            <div class="grid-item">
-                {{ app.millis_in_foreground }}
-            </div>
-            <div class="grid-item">
-                Background Time:
-            </div>
-            <div class="grid-item">
-                {{ app.millis_in_background }}
-            </div>
-            <div class="grid-item">
-                Times Opened:
-            </div>
-            <div class="grid-item">
-                {{ app.times_opened }}
-            </div>
-            <div class="grid-item">
-                Times Focused:
-            </div>
-            <div class="grid-item">
-                {{ app.times_focused }}
-            </div>
-        </div>
-    </ModalComponent>
-</template>
-
 <script>
 import { invoke } from '@tauri-apps/api';
 import { onBeforeUnmount, onMounted, ref } from 'vue';
@@ -100,6 +59,47 @@ export default {
     },
 }
 </script>
+
+<template>
+    <ModalComponent @close_modal="closeModal" v-if="app">
+        <div class="app-name">
+            {{ app.display_name }}
+        </div>
+        <hr>
+        <div class="grid">
+            <div class="grid-item">
+                Path:
+            </div>
+            <div class="grid-item">
+                <a @click="openPath">{{ app.path }}</a>
+            </div>
+            <div class="grid-item">
+                Focus Time:
+            </div>
+            <div class="grid-item">
+                {{ app.millis_in_foreground }}
+            </div>
+            <div class="grid-item">
+                Background Time:
+            </div>
+            <div class="grid-item">
+                {{ app.millis_in_background }}
+            </div>
+            <div class="grid-item">
+                Times Opened:
+            </div>
+            <div class="grid-item">
+                {{ app.times_opened }}
+            </div>
+            <div class="grid-item">
+                Times Focused:
+            </div>
+            <div class="grid-item">
+                {{ app.times_focused }}
+            </div>
+        </div>
+    </ModalComponent>
+</template>
 
 <style scoped>
 .app-name {
