@@ -11,7 +11,7 @@
   },
   "tauri": {
     "systemTray": {
-      "iconPath": "icons/logo.ico"
+      "iconPath": "icons/app_icon.ico"
     },
     "allowlist": {
       "all": false,
@@ -35,11 +35,7 @@
       "targets": "all",
       "identifier": "de.silentesc.screentime",
       "icon": [
-        "icons/32x32.png",
-        "icons/128x128.png",
-        "icons/128x128@2x.png",
-        "icons/icon.icns",
-        "icons/icon.ico"
+        "icons/app_icon.ico"
       ]
     }
   }
