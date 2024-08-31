@@ -5,6 +5,8 @@ pub fn get_screen_time_apps_sorted(date: &str, sort_mode: &str, reversed: bool) 
     let mut screen_time_apps: Vec<screen_time_app::ScreenTimeApp> =
         static_manager::get_screen_time_apps().into_values().collect();
 
+    screen_time_apps.retain(|app| !app.is_hidden());
+
     match sort_mode {
         "millis_in_foreground" => {
             screen_time_apps.sort_by_key(|screen_time_app| screen_time_app.get_millis_in_foreground(date));
@@ -30,8 +32,6 @@ pub fn get_screen_time_apps_sorted(date: &str, sort_mode: &str, reversed: bool) 
     if reversed {
         screen_time_apps.reverse();
     }
-
-    screen_time_apps.retain(|app| !app.is_hidden());
 
     screen_time_apps
 }
