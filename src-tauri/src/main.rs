@@ -162,107 +162,10 @@ fn main() {
         }
     }
 
-    // Single instance setup
+    // Only allow 1 instance at a time
+    // If another instance is already running, send a message to show the window
     let instance = SingleInstance::new(&app_name).unwrap();
-
-    if instance.is_single() {
-        let tray_menu = SystemTrayMenu::new()
-            .add_item(CustomMenuItem::new("show".to_string(), "Show"))
-            .add_item(CustomMenuItem::new("quit".to_string(), "Quit"));
-        let system_tray = SystemTray::new().with_menu(tray_menu);
-
-        tauri::Builder::default()
-            .setup(move |app| {
-                let window = app.get_window("main").unwrap();
-
-                // Hide the window instead of closing
-                let window_clone = window.clone();
-                window.on_window_event(move |event| {
-                    if let tauri::WindowEvent::CloseRequested { api, .. } = event {
-                        api.prevent_close();
-                        hide_window(&window_clone);
-                    }
-                });
-
-                // Listen for other instances
-                let window_mutex = Arc::new(Mutex::new(window));
-                let tcp_listener = TcpListener::bind("127.0.0.1:50505").expect("Failed to bind listener");
-                std::thread::spawn(move || {
-                    for stream in tcp_listener.incoming() {
-                        match stream {
-                            Ok(mut stream) => {
-                                let mut buffer = [0; 128];
-                                match stream.read(&mut buffer) {
-                                    Ok(0) => {
-                                        println!("Received empty message, ignoring.");
-                                        continue;
-                                    }
-                                    Ok(bytes_read) => {
-                                        let message = String::from_utf8_lossy(&buffer[..bytes_read]).trim().to_string();
-                                        if message == "show".to_string() {
-                                            let window = window_mutex.lock().unwrap();
-                                            show_window(&window);
-                                        }
-
-                                        stream.shutdown(std::net::Shutdown::Both).unwrap();
-                                    }
-                                    Err(e) => {
-                                        if e.kind() == std::io::ErrorKind::Interrupted {
-                                            println!("Operation interrupted, shutting down.");
-                                            break;
-                                        } else {
-                                            println!("Failed to read message, ignoring. Error: {}", e);
-                                            continue;
-                                        }
-                                    }
-                                }
-                            }
-                            Err(e) => {
-                                if e.kind() == std::io::ErrorKind::Interrupted {
-                                    println!("Accept operation interrupted, shutting down.");
-                                    break;
-                                } else {
-                                    println!("Failed to accept connection, ignoring. Error: {}", e);
-                                    continue;
-                                }
-                            }
-                        }
-                    }
-                });
-
-                // Initialize the backend
-                init_backend();
-
-                Ok(())
-            })
-            .system_tray(system_tray)
-            .on_system_tray_event(|app, event| match event {
-                SystemTrayEvent::MenuItemClick { id, .. } => match id.as_str() {
-                    "show" => {
-                        let window = app.get_window("main").unwrap();
-                        show_window(&window);
-                    }
-                    "quit" => {
-                        save_data();
-                        let window = app.get_window("main").unwrap();
-                        window.close().unwrap();
-                        app.exit(0);
-                    }
-                    _ => {}
-                },
-                _ => {}
-            })
-            .invoke_handler(tauri::generate_handler![
-                get_screen_time_apps,
-                get_screen_time_apps_sorted,
-                get_screen_time_app_by_name,
-                change_display_name,
-                change_hidden,
-                open_path
-            ])
-            .run(tauri::generate_context!())
-            .expect("error while running tauri application");
-    } else {
+    if !instance.is_single() {
         // Send a message to the other instance to show the window
         let mut stream = TcpStream::connect("127.0.0.1:50505").expect("Failed to connect to listener");
         stream.write("show".as_bytes()).unwrap();
@@ -274,4 +177,103 @@ fn main() {
         // Exit the current instance
         std::process::exit(0);
     }
+
+    // Create the system tray
+    let tray_menu = SystemTrayMenu::new()
+        .add_item(CustomMenuItem::new("show".to_string(), "Show"))
+        .add_item(CustomMenuItem::new("quit".to_string(), "Quit"));
+    let system_tray = SystemTray::new().with_menu(tray_menu);
+
+    // Run the Tauri app
+    tauri::Builder::default()
+        .setup(move |app| {
+            let window = app.get_window("main").unwrap();
+
+            // Hide the window instead of closing
+            let window_clone = window.clone();
+            window.on_window_event(move |event| {
+                if let tauri::WindowEvent::CloseRequested { api, .. } = event {
+                    api.prevent_close();
+                    hide_window(&window_clone);
+                }
+            });
+
+            // Listen for other instances
+            let window_mutex = Arc::new(Mutex::new(window));
+            let tcp_listener = TcpListener::bind("127.0.0.1:50505").expect("Failed to bind listener");
+            std::thread::spawn(move || {
+                for stream in tcp_listener.incoming() {
+                    match stream {
+                        Ok(mut stream) => {
+                            let mut buffer = [0; 128];
+                            match stream.read(&mut buffer) {
+                                Ok(0) => {
+                                    println!("Received empty message, ignoring.");
+                                    continue;
+                                }
+                                Ok(bytes_read) => {
+                                    let message = String::from_utf8_lossy(&buffer[..bytes_read]).trim().to_string();
+                                    if message == "show".to_string() {
+                                        let window = window_mutex.lock().unwrap();
+                                        show_window(&window);
+                                    }
+
+                                    stream.shutdown(std::net::Shutdown::Both).unwrap();
+                                }
+                                Err(e) => {
+                                    if e.kind() == std::io::ErrorKind::Interrupted {
+                                        println!("Operation interrupted, shutting down.");
+                                        break;
+                                    } else {
+                                        println!("Failed to read message, ignoring. Error: {}", e);
+                                        continue;
+                                    }
+                                }
+                            }
+                        }
+                        Err(e) => {
+                            if e.kind() == std::io::ErrorKind::Interrupted {
+                                println!("Accept operation interrupted, shutting down.");
+                                break;
+                            } else {
+                                println!("Failed to accept connection, ignoring. Error: {}", e);
+                                continue;
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Initialize the backend
+            init_backend();
+
+            Ok(())
+        })
+        .system_tray(system_tray)
+        .on_system_tray_event(|app, event| match event {
+            SystemTrayEvent::MenuItemClick { id, .. } => match id.as_str() {
+                "show" => {
+                    let window = app.get_window("main").unwrap();
+                    show_window(&window);
+                }
+                "quit" => {
+                    save_data();
+                    let window = app.get_window("main").unwrap();
+                    window.close().unwrap();
+                    app.exit(0);
+                }
+                _ => {}
+            },
+            _ => {}
+        })
+        .invoke_handler(tauri::generate_handler![
+            get_screen_time_apps,
+            get_screen_time_apps_sorted,
+            get_screen_time_app_by_name,
+            change_display_name,
+            change_hidden,
+            open_path
+        ])
+        .run(tauri::generate_context!())
+        .expect("error while running tauri application");
 }
