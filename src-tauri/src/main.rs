@@ -1,9 +1,11 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
+use auto_launch::AutoLaunch;
 use classes::screen_time_app;
 use single_instance::SingleInstance;
 use std::{
+    env,
     io::{Read, Write},
     net::{TcpListener, TcpStream},
     process::Command,
@@ -36,10 +38,10 @@ pub mod utils {
 }
 
 pub mod commands {
-    pub mod get_screen_time_apps;
     pub mod change_display_name;
     pub mod change_hidden;
     pub mod get_screen_time_app_by_name;
+    pub mod get_screen_time_apps;
     pub mod get_screen_time_apps_sorted;
 }
 
@@ -145,8 +147,23 @@ fn show_window(window: &tauri::Window) {
  */
 
 fn main() {
+    // Set the app name
+    let app_name = "screentime";
+
+    // Check if the app is set to auto launch
+    let debug_mode = cfg!(debug_assertions);
+    if !debug_mode {
+        let app_path = env::current_exe().unwrap().display().to_string();
+        let args = &["--hidden"];
+        let auto = AutoLaunch::new(app_name, &app_path, args);
+        let is_enabled = auto.is_enabled().expect("Failed to check if auto launch is enabled");
+        if !is_enabled {
+            auto.enable().expect("Failed to enable auto launch");
+        }
+    }
+
     // Single instance setup
-    let instance = SingleInstance::new("screen-time").unwrap();
+    let instance = SingleInstance::new(&app_name).unwrap();
 
     if instance.is_single() {
         let tray_menu = SystemTrayMenu::new()
