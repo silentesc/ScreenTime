@@ -7,7 +7,7 @@
   },
   "package": {
     "productName": "screentime",
-    "version": "0.0.0"
+    "version": "0.1.0"
   },
   "tauri": {
     "systemTray": {
@@ -34,6 +34,10 @@
       "active": true,
       "targets": "all",
       "identifier": "de.silentesc.screentime",
+      "shortDescription": "ScreenTime",
+      "category": "Utility",
+      "longDescription": "An app that lets you monitor your usage of programs",
+      "publisher": "silentesc",
       "icon": [
         "icons/app_icon.ico"
       ]
