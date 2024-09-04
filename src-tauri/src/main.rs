@@ -72,12 +72,16 @@ fn get_screen_time_app_by_name(app_name: &str, ignore_case: bool) -> Option<scre
 
 #[tauri::command]
 fn change_display_name(app_path: &str, new_display_name: &str) -> bool {
-    commands::change_display_name::change_display_name(app_path, new_display_name)
+    let success = commands::change_display_name::change_display_name(app_path, new_display_name);
+    save_data();
+    success
 }
 
 #[tauri::command]
 fn change_hidden(app_path: &str, hidden: bool) -> bool {
-    commands::change_hidden::change_hidden(app_path, hidden)
+    let success = commands::change_hidden::change_hidden(app_path, hidden);
+    save_data();
+    success
 }
 
 #[tauri::command]
