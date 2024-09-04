@@ -11,7 +11,7 @@ use std::{
     process::Command,
     sync::{Arc, Mutex},
 };
-use tauri::{CustomMenuItem, Manager, SystemTray, SystemTrayEvent, SystemTrayMenu};
+use tauri::{CustomMenuItem, Manager, PhysicalSize, SystemTray, SystemTrayEvent, SystemTrayMenu};
 
 use utils::storage_utils;
 
@@ -127,17 +127,24 @@ fn init_backend() {
     println!("Backend initialized");
 }
 
-fn hide_window(window: &tauri::Window) {
-    window.minimize().unwrap();
-    std::thread::sleep(std::time::Duration::from_millis(150));
-    window.hide().unwrap();
-}
-
 fn show_window(window: &tauri::Window) {
     window.show().unwrap();
-    std::thread::sleep(std::time::Duration::from_millis(150));
-    window.unminimize().unwrap();
     window.set_focus().unwrap();
+}
+
+fn create_window(app: &tauri::AppHandle) {
+    let window = tauri::window::WindowBuilder::new(app, "main".to_string(), tauri::WindowUrl::App("index.html".into()))
+        .title("ScreenTime")
+        .visible(false)
+        .build()
+        .unwrap();
+    window
+        .set_size(tauri::Size::Physical(PhysicalSize {
+            width: 1200,
+            height: 800,
+        }))
+        .unwrap();
+    show_window(&window);
 }
 
 /**
@@ -187,19 +194,9 @@ fn main() {
     // Run the Tauri app
     tauri::Builder::default()
         .setup(move |app| {
-            let window = app.get_window("main").unwrap();
-
-            // Hide the window instead of closing
-            let window_clone = window.clone();
-            window.on_window_event(move |event| {
-                if let tauri::WindowEvent::CloseRequested { api, .. } = event {
-                    api.prevent_close();
-                    hide_window(&window_clone);
-                }
-            });
+            let app_handle_mutex = Arc::new(Mutex::new(app.app_handle().clone()));
 
             // Listen for other instances
-            let window_mutex = Arc::new(Mutex::new(window));
             let tcp_listener = TcpListener::bind("127.0.0.1:50505").expect("Failed to bind listener");
             std::thread::spawn(move || {
                 for stream in tcp_listener.incoming() {
@@ -214,8 +211,16 @@ fn main() {
                                 Ok(bytes_read) => {
                                     let message = String::from_utf8_lossy(&buffer[..bytes_read]).trim().to_string();
                                     if message == "show".to_string() {
-                                        let window = window_mutex.lock().unwrap();
-                                        show_window(&window);
+                                        let app_handle = app_handle_mutex.lock().unwrap().app_handle();
+                                        let window_option = app_handle.get_window("main");
+                                        match window_option {
+                                            Some(window) => {
+                                                show_window(&window);
+                                            }
+                                            None => {
+                                                create_window(&app_handle);
+                                            }
+                                        }
                                     }
 
                                     stream.shutdown(std::net::Shutdown::Both).unwrap();
@@ -253,13 +258,22 @@ fn main() {
         .on_system_tray_event(|app, event| match event {
             SystemTrayEvent::MenuItemClick { id, .. } => match id.as_str() {
                 "show" => {
-                    let window = app.get_window("main").unwrap();
-                    show_window(&window);
+                    let window_option = app.get_window("main");
+                    match window_option {
+                        Some(window) => {
+                            show_window(&window);
+                        }
+                        None => {
+                            create_window(app);
+                        }
+                    }
                 }
                 "quit" => {
                     save_data();
-                    let window = app.get_window("main").unwrap();
-                    window.close().unwrap();
+                    let window_option = app.get_window("main");
+                    if let Some(window) = window_option {
+                        window.close().unwrap();
+                    }
                     app.exit(0);
                 }
                 _ => {}
@@ -274,6 +288,12 @@ fn main() {
             change_hidden,
             open_path
         ])
-        .run(tauri::generate_context!())
-        .expect("error while running tauri application");
+        .build(tauri::generate_context!())
+        .expect("error while building tauri application")
+        .run(|_app_handle, event| match event {
+            tauri::RunEvent::ExitRequested { api, .. } => {
+                api.prevent_exit();
+            }
+            _ => {}
+        });
 }
